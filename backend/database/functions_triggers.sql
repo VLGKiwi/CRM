@@ -1,0 +1,12 @@
+CREATE OR REPLACE FUNCTION user_last_login()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.last_login = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_user_last_login
+BEFORE UPDATE ON users
+FOR EACH ROW
+EXECUTE FUNCTION user_last_login();

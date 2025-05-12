@@ -10,11 +10,11 @@ WHERE id = 4;
 
 UPDATE users
 SET first_name = 'Иван'
-WHERE id = 2;
+WHERE last_name = 'Петров';
 
 UPDATE users
 SET first_name = 'Елена'
-WHERE id = 3;
+WHERE last_name = 'Сидорова';
 
 UPDATE deals
 SET amount = 150000.00
@@ -24,9 +24,6 @@ WHERE id = 1;
 
 DELETE FROM teams
 WHERE id = 3;
-
-DELETE FROM users
-WHERE id = 2;
 
 DELETE FROM deals
 WHERE id = 1;
@@ -160,11 +157,11 @@ GROUP BY team_id;
 
 SELECT team_id, COUNT(*)
 FROM users
-ORDER BY ASC;
+ORDER BY role_id;
 
 SELECT team_id, COUNT(*)
 FROM users
-ORDER BY DESC;
+ORDER BY role_id DESC;
 
 SELECT * FROM users
 WHERE team_id = 1
