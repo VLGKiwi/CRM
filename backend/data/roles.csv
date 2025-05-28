@@ -1,0 +1,6 @@
+id,name,description
+1,admin,Администратор системы
+2,manager,Менеджер
+3,sales,Менеджер по продажам
+4,support,Сотрудник поддержки
+5,developer,Разработчик
