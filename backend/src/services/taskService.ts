@@ -36,48 +36,54 @@ export const getAllTasks = async (params: {
 		} = params;
 
 		const offset = (page - 1) * limit;
-		const conditions: string[] = ['deleted_at IS NULL'];
+		const conditions: string[] = ['t.deleted_at IS NULL'];
 		const values: any[] = [];
 		let paramCount = 1;
 
 		if (status) {
-			conditions.push(`status = $${paramCount}`);
+			conditions.push(`t.status = $${paramCount}`);
 			values.push(status);
 			paramCount++;
 		}
 
 		if (priority) {
-			conditions.push(`priority = $${paramCount}`);
+			conditions.push(`t.priority = $${paramCount}`);
 			values.push(priority);
 			paramCount++;
 		}
 
 		if (search) {
-			conditions.push(`(title ILIKE $${paramCount} OR description ILIKE $${paramCount})`);
+			conditions.push(`(t.title ILIKE $${paramCount} OR t.description ILIKE $${paramCount})`);
 			values.push(`%${search}%`);
 			paramCount++;
 		}
 
 		if (assignedTo) {
-			conditions.push(`assigned_to = $${paramCount}`);
+			conditions.push(`(
+				t.buyer_id = $${paramCount} OR
+				t.project_manager_id = $${paramCount} OR
+				t.team_lead_id = $${paramCount} OR
+				t.integrator_id = $${paramCount} OR
+				t.developer_id = $${paramCount}
+			)`);
 			values.push(assignedTo);
 			paramCount++;
 		}
 
 		if (createdBy) {
-			conditions.push(`created_by = $${paramCount}`);
+			conditions.push(`t.created_by = $${paramCount}`);
 			values.push(createdBy);
 			paramCount++;
 		}
 
 		if (startDate) {
-			conditions.push(`due_date >= $${paramCount}`);
+			conditions.push(`t.due_date >= $${paramCount}`);
 			values.push(startDate);
 			paramCount++;
 		}
 
 		if (endDate) {
-			conditions.push(`due_date <= $${paramCount}`);
+			conditions.push(`t.due_date <= $${paramCount}`);
 			values.push(endDate);
 			paramCount++;
 		}
@@ -87,23 +93,35 @@ export const getAllTasks = async (params: {
 		// Получаем общее количество записей для пагинации
 		const countQuery = `
 			SELECT COUNT(*) as total
-			FROM tasks
+			FROM tasks t
 			${whereClause}
 		`;
 		const countResult = await pool.query(countQuery, values);
 		const total = parseInt(countResult.rows[0].total);
 
-		// Получаем задачи с информацией о создателе и исполнителе
+		// Получаем задачи с информацией о создателе и участниках
 		const query = `
 			SELECT
 				t.*,
 				creator.first_name as creator_first_name,
 				creator.last_name as creator_last_name,
-				assignee.first_name as assignee_first_name,
-				assignee.last_name as assignee_last_name
+				buyer.first_name as buyer_first_name,
+				buyer.last_name as buyer_last_name,
+				pm.first_name as pm_first_name,
+				pm.last_name as pm_last_name,
+				tl.first_name as tl_first_name,
+				tl.last_name as tl_last_name,
+				integrator.first_name as integrator_first_name,
+				integrator.last_name as integrator_last_name,
+				dev.first_name as developer_first_name,
+				dev.last_name as developer_last_name
 			FROM tasks t
 			LEFT JOIN users creator ON t.created_by = creator.id
-			LEFT JOIN users assignee ON t.assigned_to = assignee.id
+			LEFT JOIN users buyer ON t.buyer_id = buyer.id
+			LEFT JOIN users pm ON t.project_manager_id = pm.id
+			LEFT JOIN users tl ON t.team_lead_id = tl.id
+			LEFT JOIN users integrator ON t.integrator_id = integrator.id
+			LEFT JOIN users dev ON t.developer_id = dev.id
 			${whereClause}
 			ORDER BY t.created_at DESC
 			LIMIT $${paramCount} OFFSET $${paramCount + 1}
@@ -113,7 +131,11 @@ export const getAllTasks = async (params: {
 		const result = await pool.query(query, values);
 
 		return {
-			tasks: result.rows,
+			tasks: result.rows.map(task => ({
+				...task,
+				tags: task.tags || [],
+				metadata: task.metadata || {}
+			})),
 			pagination: {
 				total,
 				page,

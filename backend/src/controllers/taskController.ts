@@ -4,6 +4,8 @@ import * as taskService from '../services/taskService.js';
 // Получить все задачи
 export const getTasks = async (req: Request, res: Response) => {
 	try {
+		console.log('Getting tasks with query params:', req.query);
+
 		// Получаем параметры из query
 		const {
 			page = 1,
@@ -16,6 +18,11 @@ export const getTasks = async (req: Request, res: Response) => {
 			endDate
 		} = req.query;
 
+		console.log('Parsed query params:', {
+			page, limit, status, priority, search,
+			assignedTo, startDate, endDate
+		});
+
 		const tasks = await taskService.getAllTasks({
 			page: Number(page),
 			limit: Number(limit),
@@ -27,10 +34,18 @@ export const getTasks = async (req: Request, res: Response) => {
 			endDate: endDate ? new Date(endDate as string) : undefined
 		});
 
+		console.log(`Successfully retrieved ${tasks.tasks.length} tasks`);
 		res.json(tasks);
-	} catch (error) {
-		console.error('Error getting tasks:', error);
-		res.status(500).json({ message: 'Ошибка при получении задач' });
+	} catch (error: any) {
+		console.error('Detailed error in getTasks:', {
+			name: error?.name || 'Unknown error',
+			message: error?.message || 'No error message',
+			stack: error?.stack || 'No stack trace'
+		});
+		res.status(500).json({
+			message: 'Ошибка при получении задач',
+			error: error?.message || 'Unknown error'
+		});
 	}
 };
 
