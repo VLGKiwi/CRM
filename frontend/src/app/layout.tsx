@@ -1,18 +1,8 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/modules/Header/Header";
 import { Footer } from "@/modules/Footer/Footer";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import { NextAuthProvider } from "../shared/providers/providers";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -25,13 +15,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <Header />
-        <main>
-          {children}
-        </main>
-        <Footer />
+    <html lang="ru">
+      <body>
+        <NextAuthProvider>
+          <Header />
+          <main>
+            {children}
+          </main>
+          <Footer />
+        </NextAuthProvider>
       </body>
     </html>
   );

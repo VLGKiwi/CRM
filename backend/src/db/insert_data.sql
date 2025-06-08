@@ -4,7 +4,10 @@ VALUES
     ('admin', 'Администратор системы', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     ('manager', 'Менеджер', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     ('sales', 'Менеджер по продажам', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    ('support', 'Сотрудник поддержки', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+    ('support', 'Сотрудник поддержки', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON CONFLICT (name) DO UPDATE SET
+    description = EXCLUDED.description,
+    updated_at = CURRENT_TIMESTAMP;
 
 -- Заполнение таблицы команд
 INSERT INTO teams (name, description, created_at, updated_at)
@@ -12,21 +15,24 @@ VALUES
     ('Продажи', 'Отдел продаж', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     ('Поддержка', 'Отдел поддержки', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     ('Разработка', 'разработки', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    ('Маркетинг', 'Отдел', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+    ('Маркетинг', 'Отдел', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON CONFLICT (name) DO UPDATE SET
+    description = EXCLUDED.description,
+    updated_at = CURRENT_TIMESTAMP;
 
 -- Заполнение таблицы пользователей
-INSERT INTO users (id, password_hash, email, first_name, last_name, role_id, team_id, created_at, updated_at, last_login, is_active, two_factor_enabled, two_factor_secret, settings)
+INSERT INTO users (id, password_hash, email, first_name, last_name, role_id, team_id, created_at, updated_at, last_login, is_active, two_factor_enabled, two_factor_secret)
 VALUES
-    ('00000000-0000-0000-0000-000000000001', '$2a$10$XFE0DcAdWRMsUVEMPZxXU.K.6Oxe5kHww3lNMlYRKXqHNyPu4uGCa', 'admin@example.com', 'Админ', 'Системный', 1, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, TRUE, FALSE, NULL, NULL),
-    ('00000000-0000-0000-0000-000000000002', '$2a$10$XFE0DcAdWRMsUVEMPZxXU.K.6Oxe5kHww3lNMlYRKXqHNyPu4uGCa', 'manager1@example.com', 'сергей', 'Петров', 2, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, TRUE, FALSE, NULL, NULL),
-    ('00000000-0000-0000-0000-000000000003', '$2a$10$XFE0DcAdWRMsUVEMPZxXU.K.6Oxe5kHww3lNMlYRKXqHNyPu4uGCa', 'manager2@example.com', 'Иван', 'Сидорова', 2, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, TRUE, FALSE, NULL, NULL),
-    ('00000000-0000-0000-0000-000000000004', '$2a$10$XFE0DcAdWRMsUVEMPZxXU.K.6Oxe5kHww3lNMlYRKXqHNyPu4uGCa', 'sales1@example.com', 'Алексей', 'Иванов', 3, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, TRUE, FALSE, NULL, NULL),
-    ('00000000-0000-0000-0000-000000000005', '$2a$10$XFE0DcAdWRMsUVEMPZxXU.K.6Oxe5kHww3lNMlYRKXqHNyPu4uGCa', 'sales2@example.com', 'Мария', 'Кузнецова', 3, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, TRUE, FALSE, NULL, NULL),
-    ('00000000-0000-0000-0000-000000000006', '$2a$10$XFE0DcAdWRMsUVEMPZxXU.K.6Oxe5kHww3lNMlYRKXqHNyPu4uGCa', 'sales3@example.com', 'Дмитрий', 'Смирнов', 3, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, TRUE, FALSE, NULL, NULL),
-    ('00000000-0000-0000-0000-000000000007', '$2a$10$XFE0DcAdWRMsUVEMPZxXU.K.6Oxe5kHww3lNMlYRKXqHNyPu4uGCa', 'support1@example.com', 'Ольга', 'Новикова', 4, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, TRUE, FALSE, NULL, NULL),
-    ('00000000-0000-0000-0000-000000000008', '$2a$10$XFE0DcAdWRMsUVEMPZxXU.K.6Oxe5kHww3lNMlYRKXqHNyPu4uGCa', 'support2@example.com', 'Сергей', 'Морозов', 4, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, TRUE, FALSE, NULL, NULL),
-    ('00000000-0000-0000-0000-000000000009', '$2a$10$XFE0DcAdWRMsUVEMPZxXU.K.6Oxe5kHww3lNMlYRKXqHNyPu4uGCa', 'inactive@example.com', 'Неактивный', 'Пользователь', 3, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, FALSE, FALSE, NULL, NULL),
-    ('00000000-0000-0000-0000-000000000010', '$2a$10$XFE0DcAdWRMsUVEMPZxXU.K.6Oxe5kHww3lNMlYRKXqHNyPu4uGCa', 'newhire@example.com', 'Новый', 'Сотрудник', 4, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, TRUE, FALSE, NULL, NULL);
+    ('00000000-0000-0000-0000-000000000001', '$2a$10$XFE0DcAdWRMsUVEMPZxXU.K.6Oxe5kHww3lNMlYRKXqHNyPu4uGCa', 'admin@example.com', 'Админ', 'Системный', 1, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, TRUE, FALSE, NULL),
+    ('00000000-0000-0000-0000-000000000002', '$2a$10$XFE0DcAdWRMsUVEMPZxXU.K.6Oxe5kHww3lNMlYRKXqHNyPu4uGCa', 'manager1@example.com', 'сергей', 'Петров', 2, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, TRUE, FALSE, NULL),
+    ('00000000-0000-0000-0000-000000000003', '$2a$10$XFE0DcAdWRMsUVEMPZxXU.K.6Oxe5kHww3lNMlYRKXqHNyPu4uGCa', 'manager2@example.com', 'Иван', 'Сидорова', 2, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, TRUE, FALSE, NULL),
+    ('00000000-0000-0000-0000-000000000004', '$2a$10$XFE0DcAdWRMsUVEMPZxXU.K.6Oxe5kHww3lNMlYRKXqHNyPu4uGCa', 'sales1@example.com', 'Алексей', 'Иванов', 3, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, TRUE, FALSE, NULL),
+    ('00000000-0000-0000-0000-000000000005', '$2a$10$XFE0DcAdWRMsUVEMPZxXU.K.6Oxe5kHww3lNMlYRKXqHNyPu4uGCa', 'sales2@example.com', 'Мария', 'Кузнецова', 3, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, TRUE, FALSE, NULL),
+    ('00000000-0000-0000-0000-000000000006', '$2a$10$XFE0DcAdWRMsUVEMPZxXU.K.6Oxe5kHww3lNMlYRKXqHNyPu4uGCa', 'sales3@example.com', 'Дмитрий', 'Смирнов', 3, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, TRUE, FALSE, NULL),
+    ('00000000-0000-0000-0000-000000000007', '$2a$10$XFE0DcAdWRMsUVEMPZxXU.K.6Oxe5kHww3lNMlYRKXqHNyPu4uGCa', 'support1@example.com', 'Ольга', 'Новикова', 4, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, TRUE, FALSE, NULL),
+    ('00000000-0000-0000-0000-000000000008', '$2a$10$XFE0DcAdWRMsUVEMPZxXU.K.6Oxe5kHww3lNMlYRKXqHNyPu4uGCa', 'support2@example.com', 'Сергей', 'Морозов', 4, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, TRUE, FALSE, NULL),
+    ('00000000-0000-0000-0000-000000000009', '$2a$10$XFE0DcAdWRMsUVEMPZxXU.K.6Oxe5kHww3lNMlYRKXqHNyPu4uGCa', 'inactive@example.com', 'Неактивный', 'Пользователь', 3, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, FALSE, FALSE, NULL),
+    ('00000000-0000-0000-0000-000000000010', '$2a$10$XFE0DcAdWRMsUVEMPZxXU.K.6Oxe5kHww3lNMlYRKXqHNyPu4uGCa', 'newhire@example.com', 'Новый', 'Сотрудник', 4, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, TRUE, FALSE, NULL);
 
 -- Заполнение таблицы клиентов
 INSERT INTO clients (company_name, industry, website, phone, address, city, country, postal_code, created_at, updated_at, assigned_to, status)
