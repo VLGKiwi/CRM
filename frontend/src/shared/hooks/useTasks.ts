@@ -30,6 +30,15 @@ interface TasksState {
 	error: string | null;
 }
 
+interface TasksResponse {
+	tasks: Task[];
+	pagination: {
+		total: number;
+		page: number;
+		limit: number;
+	};
+}
+
 // Хук для работы с задачами
 export const useTasks = () => {
 	const { data: session } = useSession();
@@ -68,13 +77,13 @@ export const useTasks = () => {
 
 		setState(prev => ({ ...prev, loading: true, error: null }));
 		try {
-			const response = await axios.get<Task[]>(
+			const response = await axios.get<TasksResponse>(
 				'http://localhost:3001/api/tasks',
 				getAxiosConfig()
 			);
 			setState(prev => ({
 				...prev,
-				tasks: response.data,
+				tasks: response.data.tasks,
 				loading: false,
 			}));
 		} catch (error) {
