@@ -71,15 +71,15 @@ export const getAllTasks = async (params) => {
 				tl.last_name as tl_last_name,
 				integrator.first_name as integrator_first_name,
 				integrator.last_name as integrator_last_name,
-				developer.first_name as developer_first_name,
-				developer.last_name as developer_last_name
+				dev.first_name as developer_first_name,
+				dev.last_name as developer_last_name
 			FROM tasks t
 			LEFT JOIN users creator ON t.created_by = creator.id
 			LEFT JOIN users buyer ON t.buyer_id = buyer.id
 			LEFT JOIN users pm ON t.project_manager_id = pm.id
 			LEFT JOIN users tl ON t.team_lead_id = tl.id
 			LEFT JOIN users integrator ON t.integrator_id = integrator.id
-			LEFT JOIN users developer ON t.developer_id = developer.id
+			LEFT JOIN users dev ON t.developer_id = dev.id
 			${whereClause}
 			ORDER BY t.created_at DESC
 			LIMIT $${paramCount} OFFSET $${paramCount + 1}
@@ -87,7 +87,11 @@ export const getAllTasks = async (params) => {
         values.push(limit, offset);
         const result = await pool.query(query, values);
         return {
-            tasks: result.rows,
+            tasks: result.rows.map(task => ({
+                ...task,
+                tags: task.tags || [],
+                metadata: task.metadata || {}
+            })),
             pagination: {
                 total,
                 page,

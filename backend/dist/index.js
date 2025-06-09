@@ -3,6 +3,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
 import taskRoutes from './routes/tasks.js';
+import userRoutes from './routes/users.js';
+import analyticsRoutes from './routes/analytics.js';
 import cookieParser from 'cookie-parser';
 dotenv.config();
 const app = express();
@@ -28,6 +30,8 @@ app.use(cookieParser());
 // Подключаем роуты авторизации
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/analytics', analyticsRoutes);
 // Обработка ошибок
 app.use((err, req, res, next) => {
     console.error('Error:', err);
