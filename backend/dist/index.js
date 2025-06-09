@@ -7,6 +7,11 @@ import userRoutes from './routes/users.js';
 import analyticsRoutes from './routes/analytics.js';
 import cookieParser from 'cookie-parser';
 dotenv.config();
+// Debug environment variables
+console.log('Environment variables:');
+console.log('JWT_SECRET exists:', !!process.env.JWT_SECRET);
+console.log('JWT_REFRESH_SECRET exists:', !!process.env.JWT_REFRESH_SECRET);
+console.log('FRONTEND_URL:', process.env.FRONTEND_URL);
 const app = express();
 const port = process.env.PORT || 3001;
 // Request logging middleware

@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useAnalytics } from '@/shared/hooks/useAnalytics';
 import styles from './Analytics.module.scss';
+import { TasksByPriorityAnalytics } from '../../components/Analytics/TasksByPriorityAnalytics';
 
 export const Analytics = () => {
 	const [dateRange, setDateRange] = useState({
@@ -70,6 +71,8 @@ export const Analytics = () => {
 					))}
 				</div>
 			</div>
+
+			<TasksByPriorityAnalytics />
 
 			<div className={styles.section}>
 				<h2>Статистика по сотрудникам</h2>

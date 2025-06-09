@@ -9,11 +9,16 @@ export const getTasksAnalytics = async (req, res) => {
             console.log('Missing required dates');
             return res.status(400).json({ message: 'Start date and end date are required' });
         }
+        // Validate date format
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(startDate) || !dateRegex.test(endDate)) {
+            return res.status(400).json({ message: 'Invalid date format. Use YYYY-MM-DD' });
+        }
         // Сначала проверим наличие задач за период
         const checkQuery = `
             SELECT COUNT(*) as task_count
             FROM tasks t
-            WHERE t.created_at BETWEEN $1 AND $2
+            WHERE t.created_at::date BETWEEN $1::date AND $2::date
                 AND t.deleted_at IS NULL;
         `;
         const checkResult = await pool.query(checkQuery, [startDate, endDate]);
@@ -28,7 +33,7 @@ export const getTasksAnalytics = async (req, res) => {
                     AVG(COALESCE(t.estimated_hours, 0)) as avg_estimated_hours,
                     AVG(CASE WHEN t.status = 'completed' THEN COALESCE(t.actual_hours, 0) END) as avg_actual_hours
                 FROM tasks t
-                WHERE t.created_at BETWEEN $1 AND $2
+                WHERE t.created_at::date BETWEEN $1::date AND $2::date
                     AND t.deleted_at IS NULL
                 GROUP BY t.status, t.priority
             )
@@ -228,4 +233,55 @@ const formatPriority = (priority) => {
         3: 'Высокий'
     };
     return priorityMap[priority] || String(priority);
+};
+// Аналитика: количество задач по приоритету
+export const getTasksByPriority = async (req, res) => {
+    try {
+        const { startDate, endDate, priority } = req.query;
+        console.log('getTasksByPriority params:', { startDate, endDate, priority });
+        let where = 'WHERE deleted_at IS NULL';
+        const params = [];
+        let idx = 1;
+        if (startDate && typeof startDate === 'string' && startDate.trim() !== '') {
+            where += ` AND created_at::date >= $${idx++}::date`;
+            params.push(startDate);
+        }
+        if (endDate && typeof endDate === 'string' && endDate.trim() !== '') {
+            where += ` AND created_at::date <= $${idx++}::date`;
+            params.push(endDate);
+        }
+        if (priority && typeof priority === 'string' && priority.trim() !== '') {
+            let priorityValue = priority;
+            // Поддержка строковых значений
+            if (priorityValue.toLowerCase() === 'high' || priorityValue === '3' || priorityValue === 'высокий')
+                priorityValue = '3';
+            else if (priorityValue.toLowerCase() === 'medium' || priorityValue === '2' || priorityValue === 'средний')
+                priorityValue = '2';
+            else if (priorityValue.toLowerCase() === 'low' || priorityValue === '1' || priorityValue === 'низкий')
+                priorityValue = '1';
+            where += ` AND priority = $${idx++}`;
+            params.push(priorityValue);
+        }
+        const query = `
+            SELECT
+                CASE priority
+                    WHEN 1 THEN 'Низкий'
+                    WHEN 2 THEN 'Средний'
+                    WHEN 3 THEN 'Высокий'
+                    ELSE 'Не указан'
+                END as priority,
+                COUNT(*) as tasks_count
+            FROM tasks
+            ${where}
+            GROUP BY priority
+            ORDER BY priority;
+        `;
+        console.log('getTasksByPriority SQL:', query, params);
+        const result = await pool.query(query, params);
+        res.json(result.rows);
+    }
+    catch (error) {
+        console.error('Error in getTasksByPriority:', error);
+        res.status(500).json({ message: 'Failed to fetch tasks by priority', error: (error instanceof Error ? error.message : String(error)) });
+    }
 };

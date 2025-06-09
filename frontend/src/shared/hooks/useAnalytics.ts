@@ -51,10 +51,20 @@ export const useAnalytics = (props?: UseAnalyticsProps) => {
 		try {
 			const params = new URLSearchParams();
 			if (props?.startDate) {
-				params.append('startDate', formatDate(props.startDate));
+				const formattedStartDate = formatDate(props.startDate);
+				if (!formattedStartDate) {
+					setError('Invalid start date format');
+					return;
+				}
+				params.append('startDate', formattedStartDate);
 			}
 			if (props?.endDate) {
-				params.append('endDate', formatDate(props.endDate));
+				const formattedEndDate = formatDate(props.endDate);
+				if (!formattedEndDate) {
+					setError('Invalid end date format');
+					return;
+				}
+				params.append('endDate', formattedEndDate);
 			}
 
 			const response = await fetch(`${BASE_URL}/api/analytics/tasks?${params.toString()}`, {

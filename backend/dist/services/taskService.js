@@ -231,17 +231,18 @@ export const updateTask = async (taskId, taskData) => {
         client.release();
     }
 };
-// Мягкое удаление задачи
+// Физическое удаление задачи
 export const deleteTask = async (taskId) => {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
         // Проверяем существование задачи
-        const existingTask = await client.query('SELECT id FROM tasks WHERE id = $1 AND deleted_at IS NULL FOR UPDATE', [taskId]);
+        const existingTask = await client.query('SELECT id FROM tasks WHERE id = $1 FOR UPDATE', [taskId]);
         if (existingTask.rows.length === 0) {
             throw new Error('Task not found');
         }
-        const result = await client.query('UPDATE tasks SET deleted_at = NOW() WHERE id = $1 RETURNING id', [taskId]);
+        // Физически удаляем задачу
+        const result = await client.query('DELETE FROM tasks WHERE id = $1 RETURNING id', [taskId]);
         await client.query('COMMIT');
         return result.rows.length > 0;
     }

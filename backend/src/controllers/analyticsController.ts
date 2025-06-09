@@ -2,36 +2,42 @@ import { Request, Response } from 'express';
 import pool from '../config/database.js';
 
 interface DatabaseError {
-	name: string;
-	message: string;
-	stack?: string;
-	code?: string;
+    name: string;
+    message: string;
+    stack?: string;
+    code?: string;
 }
 
 // Анализ задач по статусу и приоритету за период
 export const getTasksAnalytics = async (req: Request, res: Response) => {
-	console.log('getTasksAnalytics called');
-	console.log('Query params:', req.query);
-	try {
-		const { startDate, endDate } = req.query;
+    console.log('getTasksAnalytics called');
+    console.log('Query params:', req.query);
+    try {
+        const { startDate, endDate } = req.query;
 
-		if (!startDate || !endDate) {
-			console.log('Missing required dates');
-			return res.status(400).json({ message: 'Start date and end date are required' });
-		}
+        if (!startDate || !endDate) {
+            console.log('Missing required dates');
+            return res.status(400).json({ message: 'Start date and end date are required' });
+        }
 
-		// Сначала проверим наличие задач за период
-		const checkQuery = `
+        // Validate date format
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(startDate as string) || !dateRegex.test(endDate as string)) {
+            return res.status(400).json({ message: 'Invalid date format. Use YYYY-MM-DD' });
+        }
+
+        // Сначала проверим наличие задач за период
+        const checkQuery = `
             SELECT COUNT(*) as task_count
             FROM tasks t
-            WHERE t.created_at BETWEEN $1 AND $2
+            WHERE t.created_at::date BETWEEN $1::date AND $2::date
                 AND t.deleted_at IS NULL;
         `;
 
-		const checkResult = await pool.query(checkQuery, [startDate, endDate]);
-		console.log('Total tasks in period:', checkResult.rows[0].task_count);
+        const checkResult = await pool.query(checkQuery, [startDate, endDate]);
+        console.log('Total tasks in period:', checkResult.rows[0].task_count);
 
-		const query = `
+        const query = `
             WITH task_stats AS (
                 SELECT
                     COALESCE(t.status, 'not_started') as status,
@@ -41,7 +47,7 @@ export const getTasksAnalytics = async (req: Request, res: Response) => {
                     AVG(COALESCE(t.estimated_hours, 0)) as avg_estimated_hours,
                     AVG(CASE WHEN t.status = 'completed' THEN COALESCE(t.actual_hours, 0) END) as avg_actual_hours
                 FROM tasks t
-                WHERE t.created_at BETWEEN $1 AND $2
+                WHERE t.created_at::date BETWEEN $1::date AND $2::date
                     AND t.deleted_at IS NULL
                 GROUP BY t.status, t.priority
             )
@@ -68,47 +74,47 @@ export const getTasksAnalytics = async (req: Request, res: Response) => {
                 status;
         `;
 
-		console.log('SQL Query:', query);
-		const result = await pool.query(query, [startDate, endDate]);
-		console.log('Tasks analytics query executed successfully. Row count:', result.rows.length);
-		res.json(result.rows);
-	} catch (error) {
-		const dbError = error as DatabaseError;
-		console.error('Error in getTasksAnalytics:', dbError);
-		console.error('Error details:', {
-			name: dbError.name,
-			message: dbError.message,
-			stack: dbError.stack,
-			code: dbError.code
-		});
-		res.status(500).json({ message: 'Failed to fetch tasks analytics', error: dbError.message });
-	}
+        console.log('SQL Query:', query);
+        const result = await pool.query(query, [startDate, endDate]);
+        console.log('Tasks analytics query executed successfully. Row count:', result.rows.length);
+        res.json(result.rows);
+    } catch (error) {
+        const dbError = error as DatabaseError;
+        console.error('Error in getTasksAnalytics:', dbError);
+        console.error('Error details:', {
+            name: dbError.name,
+            message: dbError.message,
+            stack: dbError.stack,
+            code: dbError.code
+        });
+        res.status(500).json({ message: 'Failed to fetch tasks analytics', error: dbError.message });
+    }
 };
 
 // Статистика по пользователям и их задачам
 export const getUsersWorkload = async (req: Request, res: Response) => {
-	console.log('getUsersWorkload called');
-	console.log('Query params:', req.query);
-	try {
-		const { startDate, endDate } = req.query;
+    console.log('getUsersWorkload called');
+    console.log('Query params:', req.query);
+    try {
+        const { startDate, endDate } = req.query;
 
-		if (!startDate || !endDate) {
-			console.log('Missing required dates');
-			return res.status(400).json({ message: 'Start date and end date are required' });
-		}
+        if (!startDate || !endDate) {
+            console.log('Missing required dates');
+            return res.status(400).json({ message: 'Start date and end date are required' });
+        }
 
-		// Сначала проверим наличие задач за период
-		const checkQuery = `
+        // Сначала проверим наличие задач за период
+        const checkQuery = `
             SELECT COUNT(*) as task_count
             FROM tasks t
             WHERE t.created_at BETWEEN $1 AND $2
                 AND t.deleted_at IS NULL;
         `;
 
-		const checkResult = await pool.query(checkQuery, [startDate, endDate]);
-		console.log('Total tasks in period:', checkResult.rows[0].task_count);
+        const checkResult = await pool.query(checkQuery, [startDate, endDate]);
+        console.log('Total tasks in period:', checkResult.rows[0].task_count);
 
-		const query = `
+        const query = `
             WITH task_assignments AS (
                 -- Объединяем все возможные назначения задач
                 SELECT
@@ -214,38 +220,88 @@ export const getUsersWorkload = async (req: Request, res: Response) => {
             ORDER BY total_tasks DESC, name ASC;
         `;
 
-		console.log('SQL Query:', query);
-		const result = await pool.query(query, [startDate, endDate]);
-		console.log('Users workload query executed successfully. Row count:', result.rows.length);
-		res.json(result.rows);
-	} catch (error) {
-		const dbError = error as DatabaseError;
-		console.error('Error in getUsersWorkload:', dbError);
-		console.error('Error details:', {
-			name: dbError.name,
-			message: dbError.message,
-			stack: dbError.stack,
-			code: dbError.code
-		});
-		res.status(500).json({ message: 'Failed to fetch users workload', error: dbError.message });
-	}
+        console.log('SQL Query:', query);
+        const result = await pool.query(query, [startDate, endDate]);
+        console.log('Users workload query executed successfully. Row count:', result.rows.length);
+        res.json(result.rows);
+    } catch (error) {
+        const dbError = error as DatabaseError;
+        console.error('Error in getUsersWorkload:', dbError);
+        console.error('Error details:', {
+            name: dbError.name,
+            message: dbError.message,
+            stack: dbError.stack,
+            code: dbError.code
+        });
+        res.status(500).json({ message: 'Failed to fetch users workload', error: dbError.message });
+    }
 };
 
 // Вспомогательные функции для форматирования
 const formatStatus = (status: string): string => {
-	const statusMap: Record<string, string> = {
-		'not_started': 'Не начато',
-		'in_progress': 'В работе',
-		'completed': 'Завершено'
-	};
-	return statusMap[status] || status;
+    const statusMap: Record<string, string> = {
+        'not_started': 'Не начато',
+        'in_progress': 'В работе',
+        'completed': 'Завершено'
+    };
+    return statusMap[status] || status;
 };
 
 const formatPriority = (priority: number): string => {
-	const priorityMap: Record<number, string> = {
-		1: 'Низкий',
-		2: 'Средний',
-		3: 'Высокий'
-	};
-	return priorityMap[priority] || String(priority);
+    const priorityMap: Record<number, string> = {
+        1: 'Низкий',
+        2: 'Средний',
+        3: 'Высокий'
+    };
+    return priorityMap[priority] || String(priority);
+};
+
+// Аналитика: количество задач по приоритету
+export const getTasksByPriority = async (req: Request, res: Response) => {
+    try {
+        const { startDate, endDate, priority } = req.query;
+        console.log('getTasksByPriority params:', { startDate, endDate, priority });
+        let where = 'WHERE deleted_at IS NULL';
+        const params: any[] = [];
+        let idx = 1;
+
+        if (startDate && typeof startDate === 'string' && startDate.trim() !== '') {
+            where += ` AND created_at::date >= $${idx++}::date`;
+            params.push(startDate);
+        }
+        if (endDate && typeof endDate === 'string' && endDate.trim() !== '') {
+            where += ` AND created_at::date <= $${idx++}::date`;
+            params.push(endDate);
+        }
+        if (priority && typeof priority === 'string' && priority.trim() !== '') {
+            let priorityValue = priority;
+            // Поддержка строковых значений
+            if (priorityValue.toLowerCase() === 'high' || priorityValue === '3' || priorityValue === 'высокий') priorityValue = '3';
+            else if (priorityValue.toLowerCase() === 'medium' || priorityValue === '2' || priorityValue === 'средний') priorityValue = '2';
+            else if (priorityValue.toLowerCase() === 'low' || priorityValue === '1' || priorityValue === 'низкий') priorityValue = '1';
+            where += ` AND priority = $${idx++}`;
+            params.push(priorityValue);
+        }
+
+        const query = `
+            SELECT
+                CASE priority
+                    WHEN 1 THEN 'Низкий'
+                    WHEN 2 THEN 'Средний'
+                    WHEN 3 THEN 'Высокий'
+                    ELSE 'Не указан'
+                END as priority,
+                COUNT(*) as tasks_count
+            FROM tasks
+            ${where}
+            GROUP BY priority
+            ORDER BY priority;
+        `;
+        console.log('getTasksByPriority SQL:', query, params);
+        const result = await pool.query(query, params);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error in getTasksByPriority:', error);
+        res.status(500).json({ message: 'Failed to fetch tasks by priority', error: (error instanceof Error ? error.message : String(error)) });
+    }
 };

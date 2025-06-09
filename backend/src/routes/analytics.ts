@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getTasksAnalytics, getUsersWorkload } from '../controllers/analyticsController.js';
+import { getTasksAnalytics, getUsersWorkload, getTasksByPriority } from '../controllers/analyticsController.js';
 import { authMiddleware } from '../middleware/auth.js';
 
 const router = Router();
@@ -12,5 +12,8 @@ router.get('/tasks', getTasksAnalytics);
 
 // Get users workload
 router.get('/users-workload', getUsersWorkload);
+
+// Get tasks by priority
+router.get('/tasks-by-priority', getTasksByPriority);
 
 export default router;
