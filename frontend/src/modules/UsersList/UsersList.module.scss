@@ -1,0 +1,72 @@
+.usersList {
+	padding: 20px;
+	max-width: 1200px;
+	margin: 0 auto;
+
+	h2 {
+		margin-bottom: 20px;
+		color: #333;
+		font-size: 24px;
+	}
+}
+
+.usersGrid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+	gap: 20px;
+}
+
+.userCard {
+	display: flex;
+	justify-content: space-between;
+	background-color: white;
+	border-radius: 8px;
+	padding: 20px;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	transition: box-shadow 0.3s ease;
+
+	&:hover {
+		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+	}
+}
+
+.userContent {
+	flex-grow: 1;
+	margin-right: 15px;
+}
+
+.userName {
+	font-size: 18px;
+	font-weight: 500;
+	color: #333;
+	margin-bottom: 8px;
+}
+
+.userEmail {
+	color: #666;
+	margin-bottom: 8px;
+	font-size: 14px;
+}
+
+.userRole {
+	color: #2196F3;
+	font-size: 14px;
+	font-weight: 500;
+}
+
+.deleteButton {
+	background-color: transparent;
+	color: #ff4444;
+	border: none;
+	font-size: 18px;
+	padding: 5px 10px;
+	margin: -10px -10px 0 0;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	height: fit-content;
+
+	&:hover {
+		background-color: #ffeeee;
+		transform: scale(1.1);
+	}
+}
