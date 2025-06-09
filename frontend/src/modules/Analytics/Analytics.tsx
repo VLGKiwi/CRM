@@ -4,22 +4,21 @@ import { useAnalytics } from '@/shared/hooks/useAnalytics';
 import styles from './Analytics.module.scss';
 
 export const Analytics = () => {
-	const { tasksAnalytics, usersWorkload, loading, error, fetchTasksAnalytics, fetchUsersWorkload } = useAnalytics();
 	const [dateRange, setDateRange] = useState({
-		startDate: new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().split('T')[0],
-		endDate: new Date().toISOString().split('T')[0]
+		startDate: new Date(new Date().setMonth(new Date().getMonth() - 1)),
+		endDate: new Date()
 	});
 
-	useEffect(() => {
-		fetchTasksAnalytics();
-		fetchUsersWorkload();
-	}, [dateRange, fetchTasksAnalytics, fetchUsersWorkload]);
+	const { tasksAnalytics, usersWorkload, loading, error, refetch } = useAnalytics({
+		startDate: dateRange.startDate,
+		endDate: dateRange.endDate
+	});
 
 	const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const { name, value } = e.target;
 		setDateRange(prev => ({
 			...prev,
-			[name]: value
+			[name]: new Date(value)
 		}));
 	};
 
@@ -34,7 +33,7 @@ export const Analytics = () => {
 					<input
 						type="date"
 						name="startDate"
-						value={dateRange.startDate}
+						value={dateRange.startDate.toISOString().split('T')[0]}
 						onChange={handleDateChange}
 					/>
 				</div>
@@ -43,7 +42,7 @@ export const Analytics = () => {
 					<input
 						type="date"
 						name="endDate"
-						value={dateRange.endDate}
+						value={dateRange.endDate.toISOString().split('T')[0]}
 						onChange={handleDateChange}
 					/>
 				</div>
@@ -98,7 +97,7 @@ export const Analytics = () => {
 									<td>{user.completion_rate}</td>
 									<td>{user.total_estimated_hours}ч</td>
 									<td>{user.total_actual_hours}ч</td>
-									<td>{user.avg_efficiency}</td>
+									<td>{user.efficiency_ratio}</td>
 								</tr>
 							))}
 						</tbody>

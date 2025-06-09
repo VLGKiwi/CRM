@@ -297,7 +297,7 @@ export const updateTask = async (taskId: string, taskData: TaskData) => {
 	}
 };
 
-// Мягкое удаление задачи
+// Физическое удаление задачи
 export const deleteTask = async (taskId: string) => {
 	const client = await pool.connect();
 	try {
@@ -305,7 +305,7 @@ export const deleteTask = async (taskId: string) => {
 
 		// Проверяем существование задачи
 		const existingTask = await client.query(
-			'SELECT id FROM tasks WHERE id = $1 AND deleted_at IS NULL FOR UPDATE',
+			'SELECT id FROM tasks WHERE id = $1 FOR UPDATE',
 			[taskId]
 		);
 
@@ -313,8 +313,9 @@ export const deleteTask = async (taskId: string) => {
 			throw new Error('Task not found');
 		}
 
+		// Физически удаляем задачу
 		const result = await client.query(
-			'UPDATE tasks SET deleted_at = NOW() WHERE id = $1 RETURNING id',
+			'DELETE FROM tasks WHERE id = $1 RETURNING id',
 			[taskId]
 		);
 

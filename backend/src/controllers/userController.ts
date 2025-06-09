@@ -45,12 +45,9 @@ export const deleteUser = async (req: Request, res: Response) => {
 			return res.status(400).json({ message: 'Нельзя удалить свой собственный аккаунт' });
 		}
 
-		// Soft delete - просто помечаем пользователя как неактивного
+		// Физическое удаление пользователя
 		const result = await pool.query(
-			`UPDATE users
-			 SET is_active = false, updated_at = CURRENT_TIMESTAMP
-			 WHERE id = $1 AND is_active = true
-			 RETURNING id`,
+			`DELETE FROM users WHERE id = $1 RETURNING id`,
 			[id]
 		);
 

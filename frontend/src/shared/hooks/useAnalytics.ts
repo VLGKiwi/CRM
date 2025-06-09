@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { format } from 'date-fns';
+import { useSession } from 'next-auth/react';
 
 interface TaskAnalytics {
 	status: string;
@@ -8,147 +9,145 @@ interface TaskAnalytics {
 	completed_tasks: number;
 	completion_rate: string;
 	avg_estimated_hours: number;
-	avg_actual_hours?: number;
+	avg_actual_hours: number;
 }
 
 interface UserWorkload {
 	name: string;
 	role: string;
+	roles_in_tasks: string;
 	total_tasks: number;
 	completed_tasks: number;
 	completion_rate: string;
 	total_estimated_hours: number;
 	total_actual_hours: number;
-	avg_efficiency: string;
+	efficiency_ratio: string;
 }
 
 interface UseAnalyticsProps {
-	startDate?: Date | null;
-	endDate?: Date | null;
+	startDate?: Date;
+	endDate?: Date;
 }
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export const useAnalytics = (props?: UseAnalyticsProps) => {
+	const { data: session, status } = useSession();
 	const [tasksAnalytics, setTasksAnalytics] = useState<TaskAnalytics[]>([]);
 	const [usersWorkload, setUsersWorkload] = useState<UserWorkload[]>([]);
-	const [isLoading, setIsLoading] = useState(false);
+	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
-	const { startDate, endDate } = props || {};
-
-	const formatDateParam = (date: Date | null | undefined) => {
-		if (!date) return undefined;
+	const formatDate = (date: Date) => {
 		return format(date, 'yyyy-MM-dd');
 	};
 
-	const parseResponse = async (response: Response) => {
-		const text = await response.text();
-		try {
-			return JSON.parse(text);
-		} catch (e) {
-			console.error('Failed to parse response:', text);
-			throw new Error('Invalid response format from server');
-		}
-	};
-
 	const fetchTasksAnalytics = useCallback(async () => {
+		if (status !== 'authenticated' || !session?.accessToken) {
+			setError('Unauthorized');
+			return;
+		}
+
 		try {
 			const params = new URLSearchParams();
-			if (startDate) params.append('startDate', formatDateParam(startDate)!);
-			if (endDate) params.append('endDate', formatDateParam(endDate)!);
+			if (props?.startDate) {
+				params.append('startDate', formatDate(props.startDate));
+			}
+			if (props?.endDate) {
+				params.append('endDate', formatDate(props.endDate));
+			}
 
 			const response = await fetch(`${BASE_URL}/api/analytics/tasks?${params.toString()}`, {
 				headers: {
-					'Authorization': `Bearer ${localStorage.getItem('token')}`
+					'Authorization': `Bearer ${session.accessToken}`
 				},
 				credentials: 'include'
 			});
 
 			if (!response.ok) {
-				const errorText = await response.text();
-				console.error('Server error response:', errorText);
-				throw new Error(`HTTP error! status: ${response.status}`);
+				const errorData = await response.json().catch(() => ({ message: 'Failed to fetch tasks analytics' }));
+				throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
 			}
 
-			const data = await parseResponse(response);
-			if (Array.isArray(data)) {
-				setTasksAnalytics(data);
-			} else {
-				console.error('Unexpected data format:', data);
-				throw new Error('Unexpected data format from server');
-			}
+			const data = await response.json();
+			console.log('Tasks analytics data:', data);
+			setTasksAnalytics(data);
 		} catch (err) {
-			console.error('Error in fetchTasksAnalytics:', err);
+			console.error('Error fetching tasks analytics:', err);
 			setError(err instanceof Error ? err.message : 'Failed to fetch tasks analytics');
-			setTasksAnalytics([]);
 		}
-	}, [startDate, endDate]);
+	}, [session?.accessToken, status, props?.startDate, props?.endDate]);
 
 	const fetchUsersWorkload = useCallback(async () => {
+		if (status !== 'authenticated' || !session?.accessToken) {
+			setError('Unauthorized');
+			return;
+		}
+
 		try {
 			const params = new URLSearchParams();
-			if (startDate) params.append('startDate', formatDateParam(startDate)!);
-			if (endDate) params.append('endDate', formatDateParam(endDate)!);
+			if (props?.startDate) {
+				params.append('startDate', formatDate(props.startDate));
+			}
+			if (props?.endDate) {
+				params.append('endDate', formatDate(props.endDate));
+			}
 
 			const response = await fetch(`${BASE_URL}/api/analytics/users-workload?${params.toString()}`, {
 				headers: {
-					'Authorization': `Bearer ${localStorage.getItem('token')}`
+					'Authorization': `Bearer ${session.accessToken}`
 				},
 				credentials: 'include'
 			});
 
 			if (!response.ok) {
-				const errorText = await response.text();
-				console.error('Server error response:', errorText);
-				throw new Error(`HTTP error! status: ${response.status}`);
+				const errorData = await response.json().catch(() => ({ message: 'Failed to fetch users workload' }));
+				throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
 			}
 
-			const data = await parseResponse(response);
-			if (Array.isArray(data)) {
-				setUsersWorkload(data);
-			} else {
-				console.error('Unexpected data format:', data);
-				throw new Error('Unexpected data format from server');
-			}
+			const data = await response.json();
+			console.log('Users workload data:', data);
+			setUsersWorkload(data);
 		} catch (err) {
-			console.error('Error in fetchUsersWorkload:', err);
+			console.error('Error fetching users workload:', err);
 			setError(err instanceof Error ? err.message : 'Failed to fetch users workload');
-			setUsersWorkload([]);
 		}
-	}, [startDate, endDate]);
+	}, [session?.accessToken, status, props?.startDate, props?.endDate]);
 
 	useEffect(() => {
 		const fetchData = async () => {
-			setIsLoading(true);
+			if (status !== 'authenticated' || !session?.accessToken) {
+				setLoading(false);
+				return;
+			}
+
+			setLoading(true);
 			setError(null);
 			try {
-				await Promise.all([
-					fetchTasksAnalytics(),
-					fetchUsersWorkload()
-				]);
+				await Promise.all([fetchTasksAnalytics(), fetchUsersWorkload()]);
 			} catch (err) {
 				console.error('Error in fetchData:', err);
+				setError(err instanceof Error ? err.message : 'Failed to fetch analytics data');
 			} finally {
-				setIsLoading(false);
+				setLoading(false);
 			}
 		};
 
 		fetchData();
-	}, [fetchTasksAnalytics, fetchUsersWorkload]);
+	}, [session?.accessToken, status, fetchTasksAnalytics, fetchUsersWorkload]);
 
 	return {
 		tasksAnalytics,
 		usersWorkload,
-		isLoading,
+		loading,
 		error,
 		fetchTasksAnalytics,
 		fetchUsersWorkload,
-		refetch: useCallback(async () => {
-			await Promise.all([
-				fetchTasksAnalytics(),
-				fetchUsersWorkload()
-			]);
-		}, [fetchTasksAnalytics, fetchUsersWorkload])
+		refetch: () => {
+			setLoading(true);
+			setError(null);
+			return Promise.all([fetchTasksAnalytics(), fetchUsersWorkload()])
+				.finally(() => setLoading(false));
+		}
 	};
 };

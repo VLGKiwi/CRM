@@ -10,12 +10,14 @@
   },
   "dependencies": {
     "@types/axios": "^0.14.4",
+    "@types/react-router-dom": "^5.3.3",
     "axios": "^1.9.0",
     "date-fns": "^4.1.0",
     "next": "14.0.4",
     "next-auth": "^4.24.5",
     "react": "^18",
     "react-dom": "^18",
+    "react-router-dom": "^7.6.2",
     "sass": "^1.89.1"
   },
   "devDependencies": {

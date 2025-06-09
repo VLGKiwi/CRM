@@ -152,3 +152,14 @@ VALUES
     ('email', 'Отправка инструкций', 'Отправка инструкций по использованию системы', '2023-07-15 10:00:00', NULL, NULL, 'Инструкции отправлены', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '00000000-0000-0000-0000-000000000002', 9, 11, 9),
     ('meeting', 'Обучение персонала', 'Обучение сотрудников работе с CRM', '2023-07-20 09:00:00', '2023-07-20 17:00:00', 'Офис клиента', 'Обучение проведено успешно', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '00000000-0000-0000-0000-000000000003', 10, 12, 10),
     ('call', 'Контроль удовлетворенности', 'Звонок для проверки удовлетворенности клиента', '2023-07-25 14:00:00', '2023-07-25 14:15:00', NULL, 'Клиент доволен системой', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '00000000-0000-0000-0000-000000000005', 1, 1, 1);
+
+-- Insert test user (password: Test123!)
+INSERT INTO users (email, password_hash, first_name, last_name, role_id, is_active)
+SELECT
+    'test@example.com',
+    '$2a$10$X7UrH5YxX5YxX5YxX5YxX.5YxX5YxX5YxX5YxX5YxX5YxX5YxX5Yx',
+    'Test',
+    'User',
+    (SELECT id FROM roles WHERE name = 'admin'),
+    true
+ON CONFLICT (email) DO NOTHING;
