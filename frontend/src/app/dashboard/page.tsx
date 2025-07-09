@@ -1,10 +1,16 @@
-import { MainPage } from "@/view/mainPage/MainPage";
+'use client';
 
-export default function Home() {
+import { TaskList } from '@/modules/TaskList/TaskList';
+import { UsersList } from '@/modules/UsersList/UsersList';
+import styles from './page.module.css';
+import { Analytics } from '@/modules/Analytics/Analytics';
+
+export default function Dashboard() {
   return (
-		<>
-			<h1>Работает</h1>
-      <MainPage />
-    </>
+    <div className={styles.container}>
+      <TaskList />
+      <UsersList />
+      <Analytics /> 
+    </div>
   );
 }

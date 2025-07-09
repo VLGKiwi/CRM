@@ -2,9 +2,15 @@ import { UUID } from 'crypto';
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 
+if (!process.env.NEXTAUTH_SECRET) {
+	throw new Error('Please provide NEXTAUTH_SECRET environment variable');
+}
+
 const handler = NextAuth({
+	secret: process.env.NEXTAUTH_SECRET,
 	providers: [
 		CredentialsProvider({
+			id: 'credentials',
 			name: 'Credentials',
 			credentials: {
 				email: { label: "Email", type: "email" },
@@ -16,10 +22,14 @@ const handler = NextAuth({
 				}
 
 				try {
-					const res = await fetch('http://localhost:3001/api/auth/login', {
+					const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, '').replace(/\/api$/, '');
+					console.log('Base URL:', baseUrl);
+					console.log('Attempting login with:', credentials.email);
+
+					const res = await fetch(`${baseUrl}/api/auth/login`, {
 						method: 'POST',
 						headers: {
-							'Content-Type': 'application/json'
+							'Content-Type': 'application/json',
 						},
 						body: JSON.stringify({
 							email: credentials.email,
@@ -27,29 +37,30 @@ const handler = NextAuth({
 						}),
 					});
 
-					const data = await res.json();
+					const data = await res.json().catch(() => null);
+					console.log('Login response:', data);
 
 					if (!res.ok) {
-						throw new Error(data.message || 'Ошибка авторизации');
+						throw new Error(data?.message || 'Ошибка авторизации');
 					}
 
-					if (data.user) {
-						return {
-							id: data.user.id,
-							email: data.user.email,
-							name: `${data.user.firstName} ${data.user.lastName}`,
-							firstName: data.user.firstName,
-							lastName: data.user.lastName,
-							role: data.user.role,
-							teamId: data.user.teamId,
-							accessToken: data.token,
-						};
+					if (!data?.token || !data?.user) {
+						throw new Error('Неверный формат ответа от сервера');
 					}
 
-					return null;
-				} catch (error) {
+					return {
+						id: data.user.id,
+						email: data.user.email,
+						name: `${data.user.firstName} ${data.user.lastName}`,
+						firstName: data.user.firstName,
+						lastName: data.user.lastName,
+						role: data.user.role,
+						teamId: data.user.teamId,
+						accessToken: data.token
+					};
+				} catch (error: any) {
 					console.error('Auth error:', error);
-					throw new Error('Ошибка при попытке входа');
+					throw new Error(error.message || 'Ошибка при попытке входа');
 				}
 			}
 		})
@@ -57,22 +68,26 @@ const handler = NextAuth({
 	callbacks: {
 		async jwt({ token, user }) {
 			if (user) {
-				token.id = (user as any).id;
-				token.role = (user as any).role;
-				token.firstName = (user as any).firstName;
-				token.lastName = (user as any).lastName;
-				token.teamId = (user as any).teamId;
-				token.accessToken = (user as any).accessToken;
+				token.id = user.id;
+				token.email = user.email;
+				token.name = user.name;
+				token.role = user.role;
+				token.firstName = user.firstName;
+				token.lastName = user.lastName;
+				token.teamId = user.teamId;
+				token.accessToken = user.accessToken;
 			}
 			return token;
 		},
 		async session({ session, token }) {
 			if (token) {
-				(session.user as any).id = token.id;
-				(session.user as any).role = token.role;
-				(session.user as any).firstName = token.firstName;
-				(session.user as any).lastName = token.lastName;
-				(session.user as any).teamId = token.teamId;
+				session.user.id = token.id;
+				session.user.email = token.email;
+				session.user.name = token.name;
+				session.user.role = token.role;
+				session.user.firstName = token.firstName;
+				session.user.lastName = token.lastName;
+				session.user.teamId = token.teamId;
 				session.accessToken = token.accessToken;
 			}
 			return session;

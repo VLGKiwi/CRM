@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import styles from './LoginForm.module.css';
 
 export default function LoginForm() {
 	const [email, setEmail] = useState('');
@@ -22,13 +23,15 @@ export default function LoginForm() {
 				email,
 				password,
 				redirect: false,
-				callbackUrl,
 			});
 
-			if (result?.error) {
-				setError(result.error);
-			} else if (result?.url) {
-				router.push(result.url);
+			console.log('SignIn result:', result);
+
+			if (!result?.ok) {
+				setError(result?.error || 'Ошибка авторизации');
+			} else {
+				router.push(callbackUrl);
+				router.refresh();
 			}
 		} catch (error) {
 			console.error('Login error:', error);
@@ -39,17 +42,15 @@ export default function LoginForm() {
 	};
 
 	return (
-		<div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-			<div className="max-w-md w-full space-y-8">
+		<div className={styles.container}>
+			<div className={styles.formWrapper}>
 				<div>
-					<h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-						Вход в систему
-					</h2>
+					<h2 className={styles.title}>Вход в систему</h2>
 				</div>
-				<form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-					<div className="rounded-md shadow-sm -space-y-px">
+				<form className={styles.form} onSubmit={handleSubmit}>
+					<div className={styles.inputGroup}>
 						<div>
-							<label htmlFor="email" className="sr-only">
+							<label htmlFor="email" className={styles.label}>
 								Email
 							</label>
 							<input
@@ -57,7 +58,7 @@ export default function LoginForm() {
 								name="email"
 								type="email"
 								required
-								className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+								className={styles.input}
 								placeholder="Email"
 								value={email}
 								onChange={(e) => setEmail(e.target.value)}
@@ -65,7 +66,7 @@ export default function LoginForm() {
 							/>
 						</div>
 						<div>
-							<label htmlFor="password" className="sr-only">
+							<label htmlFor="password" className={styles.label}>
 								Пароль
 							</label>
 							<input
@@ -73,7 +74,7 @@ export default function LoginForm() {
 								name="password"
 								type="password"
 								required
-								className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+								className={styles.input}
 								placeholder="Пароль"
 								value={password}
 								onChange={(e) => setPassword(e.target.value)}
@@ -83,17 +84,14 @@ export default function LoginForm() {
 					</div>
 
 					{error && (
-						<div className="text-red-500 text-sm text-center">{error}</div>
+						<div className={styles.error}>{error}</div>
 					)}
 
 					<div>
 						<button
 							type="submit"
 							disabled={isLoading}
-							className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white ${isLoading
-								? 'bg-indigo-400 cursor-not-allowed'
-								: 'bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
-								}`}
+							className={`${styles.button} ${isLoading ? styles.buttonLoading : ''}`}
 						>
 							{isLoading ? 'Вход...' : 'Войти'}
 						</button>
